@@ -8,6 +8,40 @@ int BOTTOM_INDEX = 0;
 int TOP_INDEX = int(ledCount/2);
 int EVENODD = ledCount%2;
 
+class CPattern 
+{  
+  protected: 
+    CRGB *m_pLeds; 
+    int m_ledCount; 
+  public: 
+    CPattern(CRGB *pLeds, int numLeds) : m_pLeds(pLeds), m_ledCount(numLeds) {};
+    virtual void draw() = 0; 
+}; 
+
+class CMarchPattern : public CPattern 
+{ 
+  private:
+    uint8_t m_nFadeAmount;
+  public: 
+    CMarchPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds) {} 
+
+    virtual void draw() 
+    {
+      CRGB temp = leds[m_ledCount-1];
+      for(int i = m_ledCount-1; i > 0; i-- ) 
+      {
+        m_pLeds[i] = m_pLeds[i-1];
+      }
+      m_pLeds[0] = temp;
+    }
+}; 
+
+CPattern *pPatterns[] = 
+{ 
+  new CMarchPattern(leds, ledCount)
+//  new CMarchPattern(leds, NUM_LEDS)
+} ;
+
 
 void setup() {
 	// sanity check delay - allows reprogramming if accidently blowing power w/leds
@@ -211,6 +245,7 @@ byte getFilteredHue(byte hue)
 
 void loop()
 {
+
   for (int i = 0;i<ledCount;i++)
     marchingSolidFill(CRGB::Red);
   for (int i = 0;i<ledCount;i++)
@@ -220,9 +255,17 @@ void loop()
 
 
   rwb_march(true);
+  
   for (int i = 0;i<75;i++)
-    rwb_march(false);
-
+  {
+    int iPattern=0; 
+    while(pPatterns[iPattern] != NULL) 
+    {  
+      pPatterns[iPattern++]->draw(); 
+    } 
+    LEDS.show(); 
+    delay(150);
+  }
 //  for (int i = 0;i<1000;i++)
 //    flicker();
   for (int i = 0;i<250;i++)
