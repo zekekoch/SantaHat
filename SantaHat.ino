@@ -43,10 +43,17 @@ int antipodal_index(int i) {
 }
 
 //---FIND ADJACENT INDEX CLOCKWISE
-int adjacent_cw(int i) {
+int adjacent_cw(int i) 
+{
   int r;
-  if (i < ledCount - 1) {r = i + 1;}
-  else {r = 0;}
+  if (i < ledCount - 1) 
+  {
+    r = i + 1;
+  }
+  else 
+  {
+    r = 0;
+  }
   return r;
 }
 
@@ -60,11 +67,12 @@ int adjacent_ccw(int i) {
 
 void marchCW()
 {
-  for(int i = ledCount; i > 0; i-- ) 
+  CRGB temp = leds[ledCount-1];
+  for(int i = ledCount-1; i > 0; i-- ) 
   {
     leds[i] = leds[i-1];
   }
-  leds[0] = leds[ledCount-1];
+  leds[0] = temp;
 }
 
 void marchCCW()
@@ -89,6 +97,21 @@ void threeColorFill(CRGB first, CRGB second, CRGB third)
         break;
     }
   }
+}
+
+void marchingSolidFill(CRGB color)
+{
+  static byte frame = 0;
+  if (ledCount == frame)
+  {
+    frame = 0;
+  }
+
+  leds[frame] = color;
+  frame++;
+  LEDS.show();
+  delay(125);
+
 }
 
 void rwb_march(boolean firstRun)
@@ -188,9 +211,18 @@ byte getFilteredHue(byte hue)
 
 void loop()
 {
+  for (int i = 0;i<ledCount;i++)
+    marchingSolidFill(CRGB::Red);
+  for (int i = 0;i<ledCount;i++)
+    marchingSolidFill(CRGB::White);
+  for (int i = 0;i<ledCount;i++)
+    marchingSolidFill(CRGB::Green);
+
+
   rwb_march(true);
-  for (int i = 0;i<150;i++)
+  for (int i = 0;i<75;i++)
     rwb_march(false);
+
 //  for (int i = 0;i<1000;i++)
 //    flicker();
   for (int i = 0;i<250;i++)
