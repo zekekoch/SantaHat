@@ -18,10 +18,27 @@ class CPattern
     virtual void draw() = 0; 
 }; 
 
+class CSolidDotPattern : public CPattern
+{
+  int mFrame;
+  CRGB mColor;
+  public:
+    CSolidDotPattern(CRGB *pStartLed, int nLeds, CRGB color) : CPattern(pStartLed, nLeds), mFrame(0), mColor(color) {}   
+
+  virtual void draw()
+  {
+    if (m_ledCount == mFrame)
+    {
+      mFrame = 0;
+    }
+
+    m_pLeds[mFrame] = mColor;
+    mFrame++;
+  }
+};
+
 class CMarchPattern : public CPattern 
 { 
-  private:
-    uint8_t m_nFadeAmount;
   public: 
     CMarchPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds) {} 
 
@@ -36,20 +53,51 @@ class CMarchPattern : public CPattern
     }
 }; 
 
-CPattern *pPatterns[] = 
-{ 
-  new CMarchPattern(leds, ledCount)
-//  new CMarchPattern(leds, NUM_LEDS)
-} ;
+class CThreeColorMarchPattern : public CMarchPattern
+{
+  CRGB mFirst;
+  CRGB mSecond;
+  CRGB mThird;
+
+  public: 
+    CThreeColorMarchPattern(CRGB *pStartLed, int nLeds, CRGB first, CRGB second, CRGB third) : CMarchPattern(pStartLed, nLeds), mFirst(first), mSecond(second), mThird(third) 
+    {
+      for (int i = 0;i<ledCount;i++)
+      {
+        switch(i%3)
+        {
+          case 0:
+            leds[i] = first;
+            break;
+          case 1:
+            leds[i] = second;
+            break;
+          case 2:
+            leds[i] = third;
+            break;
+        }
+      }
+    } 
+
+    virtual void draw() 
+    {
+      CMarchPattern::draw();
+    }
+};
+
+
+CPattern *pPatterns[10] = {NULL};
 
 
 void setup() {
 	// sanity check delay - allows reprogramming if accidently blowing power w/leds
-   	delay(1000);
+ 	delay(1000);
 
-    // global brightness doesn't work on the attiny85
-   	//LEDS.setBrightness(8);
-   	LEDS.addLeds<WS2811, PIN, GRB>(leds, ledCount);
+  // global brightness doesn't work on the attiny85
+ 	//LEDS.setBrightness(8);
+ 	LEDS.addLeds<WS2811, PIN, GRB>(leds, ledCount);
+
+  pPatterns[0] = new CMarchPattern(leds, ledCount);
 }
 
 void rainbow_loop(){                       //-m88-RAINBOW FADE FROM FAST_SPI2
@@ -112,53 +160,6 @@ void marchCW()
 void marchCCW()
 {
 
-}
-
-void threeColorFill(CRGB first, CRGB second, CRGB third)
-{
-  for (int i = 0;i<ledCount;i++)
-  {
-    switch(i%3)
-    {
-      case 0:
-        leds[i] = first;
-        break;
-      case 1:
-        leds[i] = second;
-        break;
-      case 2:
-        leds[i] = third;
-        break;
-    }
-  }
-}
-
-void marchingSolidFill(CRGB color)
-{
-  static byte frame = 0;
-  if (ledCount == frame)
-  {
-    frame = 0;
-  }
-
-  leds[frame] = color;
-  frame++;
-  LEDS.show();
-  delay(125);
-
-}
-
-void rwb_march(boolean firstRun)
-{
-  if (firstRun) 
-  {
-    threeColorFill(CRGB::White, CRGB::Red, CRGB::Green);
-    firstRun = false;
-  }
-
-  marchCW();
-  LEDS.show();
-  delay(125);
 }
 
 void flicker() {            //-m9-FLICKER EFFECT
@@ -243,20 +244,13 @@ byte getFilteredHue(byte hue)
   return hue;
 }
 
-void loop()
+void runPattern(int frameCount, int duration)
 {
-
-  for (int i = 0;i<ledCount;i++)
-    marchingSolidFill(CRGB::Red);
-  for (int i = 0;i<ledCount;i++)
-    marchingSolidFill(CRGB::White);
-  for (int i = 0;i<ledCount;i++)
-    marchingSolidFill(CRGB::Green);
-
-
-  rwb_march(true);
+//  unsigned long tick = millis();
+  unsigned long millsPerFrame = duration/frameCount;
   
-  for (int i = 0;i<75;i++)
+
+  for (int i = 0;i<frameCount;i++)
   {
     int iPattern=0; 
     while(pPatterns[iPattern] != NULL) 
@@ -264,13 +258,28 @@ void loop()
       pPatterns[iPattern++]->draw(); 
     } 
     LEDS.show(); 
-    delay(150);
-  }
+    delay(millsPerFrame);
+  }  
+}
+
+void loop()
+{
+
+  pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Red);
+  runPattern(15, 1500);
+  pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::White);
+  runPattern(15, 1500);
+  pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Green);
+  runPattern(15, 1500);
+
+  pPatterns[0] = new CThreeColorMarchPattern(leds, ledCount, CRGB::White, CRGB::Red, CRGB::Green);
+  runPattern(30, 3000);
+
 //  for (int i = 0;i<1000;i++)
 //    flicker();
   for (int i = 0;i<250;i++)
     color_bounce();
-  for (int i = 0;i<250;i++)
+  for (int i = 0;i<75;i++)
     twinkle();
   for (int i = 0;i<1000;i++)
     rainbow_loop();
