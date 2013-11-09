@@ -37,6 +37,46 @@ class CSolidDotPattern : public CPattern
   }
 };
 
+class CColorBouncePattern : public CPattern
+{
+  private:
+    byte idex;
+    byte hue;
+    byte val;
+
+  public:
+    CColorBouncePattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds),idex(0), hue(0), val(255) {}
+
+    virtual void draw()
+    {
+
+      static boolean bounceForward = true;
+      if (bounceForward) {
+        idex = idex + 1;
+        if (idex == ledCount) {
+          bounceForward = false;
+          idex = idex - 1;
+        }
+      } 
+      else
+      {
+        idex = idex - 1;
+        if (idex == 0) {
+          bounceForward = true;
+        }
+      }  
+
+      // reset everything to black 
+      memset(leds, 0, sizeof(struct CRGB) * ledCount); 
+
+      // set the leds that we want set 
+      leds[adjacent_cw(idex)] = CHSV(hue, 255, val/2);
+      leds[idex] = CHSV(hue, 255, val);
+      leds[adjacent_ccw(idex)] = CHSV(hue, 255, val/2);
+      hue = getFilteredHue(hue);
+    }
+};
+
 class CMarchPattern : public CPattern 
 { 
   public: 
@@ -52,6 +92,19 @@ class CMarchPattern : public CPattern
       m_pLeds[0] = temp;
     }
 }; 
+
+class CRainbowMarchPattern : public CPattern
+{
+  public: 
+    CRainbowMarchPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds) {} 
+
+    virtual void draw() 
+    {
+      static byte ihue = 0;
+      ihue -= 1;
+      fill_rainbow( leds, ledCount, ihue );
+    }
+};
 
 class CThreeColorMarchPattern : public CMarchPattern
 {
@@ -98,14 +151,6 @@ void setup() {
  	LEDS.addLeds<WS2811, PIN, GRB>(leds, ledCount);
 
   pPatterns[0] = new CMarchPattern(leds, ledCount);
-}
-
-void rainbow_loop(){                       //-m88-RAINBOW FADE FROM FAST_SPI2
-  static byte ihue = 0;
-  ihue -= 1;
-  fill_rainbow( leds, ledCount, ihue );
-  LEDS.show();
-  delay(5);
 }
 
 //---FIND INDEX OF HORIZONAL OPPOSITE LED
@@ -197,40 +242,6 @@ void twinkle()
   delay(200);
 }
 
-void color_bounce() {                        //-m5-BOUNCE COLOR (SINGLE LED)
-  static byte idex = 0;
-  static byte hue = 0;
-  static byte val = 255;
-
-  static boolean bounceForward = true;
-  if (bounceForward) {
-    idex = idex + 1;
-    if (idex == ledCount) {
-      bounceForward = false;
-      idex = idex - 1;
-    }
-  } 
-  else
-  {
-    idex = idex - 1;
-    if (idex == 0) {
-      bounceForward = true;
-    }
-  }  
-
-  // reset everything to black 
-  memset(leds, 0, sizeof(struct CRGB) * ledCount); 
-
-  // set the leds that we want set 
-  leds[adjacent_cw(idex)] = CHSV(hue, 255, val/2);
-  leds[idex] = CHSV(hue, 255, val);
-  leds[adjacent_ccw(idex)] = CHSV(hue, 255, val/2);
-  hue = getFilteredHue(hue);
-
-  LEDS.show();
-  delay(75);
-}
-
 byte getFilteredHue(byte hue)
 {
   hue++;
@@ -264,6 +275,8 @@ void runPattern(int frameCount, int duration)
 
 void loop()
 {
+  pPatterns[0] = new CRainbowMarchPattern(leds, ledCount);
+  runPattern(1000, 5000);
 
   pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Red);
   runPattern(15, 1500);
@@ -272,16 +285,16 @@ void loop()
   pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Green);
   runPattern(15, 1500);
 
+  pPatterns[0] = new CColorBouncePattern(leds, ledCount);
+  runPattern(100, 5000);
+
+
   pPatterns[0] = new CThreeColorMarchPattern(leds, ledCount, CRGB::White, CRGB::Red, CRGB::Green);
   runPattern(30, 3000);
 
-//  for (int i = 0;i<1000;i++)
-//    flicker();
-  for (int i = 0;i<250;i++)
-    color_bounce();
+
   for (int i = 0;i<75;i++)
     twinkle();
-  for (int i = 0;i<1000;i++)
-    rainbow_loop();
+
 }
 
