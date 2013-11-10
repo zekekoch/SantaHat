@@ -93,18 +93,49 @@ class CMarchPattern : public CPattern
     }
 }; 
 
-class CRainbowMarchPattern : public CPattern
+class CSolidPattern : public CPattern
 {
-  public: 
-    CRainbowMarchPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds) {} 
+  private: CRGB mColor;
+  public:   
+    CSolidPattern(CRGB *pStartLed, int nLeds, CRGB color) : CPattern(pStartLed, nLeds), mColor(color) {} 
 
     virtual void draw() 
     {
-      static byte ihue = 0;
+      fill_solid(m_pLeds, m_ledCount, mColor);
+    }
+
+};
+
+class CRainbowMarchPattern : public CPattern
+{
+  private:
+   byte ihue;
+  public: 
+    CRainbowMarchPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds), ihue(0) {} 
+
+    virtual void draw() 
+    {
       ihue -= 1;
-      fill_rainbow( leds, ledCount, ihue );
+      fill_rainbow( m_pLeds, m_ledCount, ihue );
     }
 };
+
+class CStarPattern : public CPattern
+{
+  private:
+      int starPos;
+  public: 
+    CStarPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds), starPos(random(0,nLeds)) 
+    {
+
+    } 
+
+    virtual void draw() 
+    {
+      m_pLeds[starPos] = CHSV(0, 0, random(0,255));
+    }
+};
+
 
 class CThreeColorMarchPattern : public CMarchPattern
 {
@@ -275,22 +306,47 @@ void runPattern(int frameCount, int duration)
 
 void loop()
 {
+
+
+  for (int i = 0;i<30;i++)
+  {
+    pPatterns[0] = new CSolidPattern(leds, ledCount, CRGB::Black);
+    pPatterns[1] = new CStarPattern(leds, ledCount);
+    pPatterns[2] = new CStarPattern(leds, ledCount);
+    pPatterns[3] = new CStarPattern(leds, ledCount);
+    runPattern(20, 400);
+    delete pPatterns[0];
+    delete pPatterns[1];
+    delete pPatterns[2];
+    delete pPatterns[3];
+  }
+
   pPatterns[0] = new CRainbowMarchPattern(leds, ledCount);
   runPattern(1000, 5000);
+  delete pPatterns[0];
 
   pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Red);
   runPattern(15, 1500);
+  delete pPatterns[0];
+
   pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::White);
   runPattern(15, 1500);
+  delete pPatterns[0];
+
   pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Green);
   runPattern(15, 1500);
+  delete pPatterns[0];
 
   pPatterns[0] = new CColorBouncePattern(leds, ledCount);
   runPattern(100, 5000);
+  delete pPatterns[0];
 
 
   pPatterns[0] = new CThreeColorMarchPattern(leds, ledCount, CRGB::White, CRGB::Red, CRGB::Green);
   runPattern(30, 3000);
+  delete pPatterns[0];
+
+
 
 
   for (int i = 0;i<75;i++)
