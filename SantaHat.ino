@@ -1,12 +1,23 @@
 #include "FastSPI_LED2.h"
 
-#define ledCount 15
-#define PIN 3
+const byte ledCount = 15;
+const byte PIN = 3;
+
+
 
 CRGB leds[ledCount];
 int BOTTOM_INDEX = 0;
 int TOP_INDEX = int(ledCount/2);
 int EVENODD = ledCount%2;
+
+/*
+constexpr int factorial(int n)
+{
+    return n <= 1 ? 1 : (n * factorial(n-1));
+}
+*/
+
+enum Flags { good=0, fail=1, bad=2, eof=4 };
 
 class CPattern 
 {  
@@ -125,7 +136,7 @@ class CStarPattern : public CPattern
   private:
       int starPos;
   public: 
-    CStarPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds), starPos(random(0,nLeds)) 
+    CStarPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds), starPos(random(0,nLeds-1)) 
     {
 
     } 
@@ -170,6 +181,7 @@ class CThreeColorMarchPattern : public CMarchPattern
 };
 
 
+//CPattern *pPatterns[10] = {NULL};
 CPattern *pPatterns[10] = {NULL};
 
 
@@ -181,7 +193,6 @@ void setup() {
  	//LEDS.setBrightness(8);
  	LEDS.addLeds<WS2811, PIN, GRB>(leds, ledCount);
 
-  pPatterns[0] = new CMarchPattern(leds, ledCount);
 }
 
 //---FIND INDEX OF HORIZONAL OPPOSITE LED
@@ -306,20 +317,20 @@ void runPattern(int frameCount, int duration)
 
 void loop()
 {
-
-
-  for (int i = 0;i<30;i++)
+  /*
+  for (int i = 0;i<5;i++)
   {
     pPatterns[0] = new CSolidPattern(leds, ledCount, CRGB::Black);
     pPatterns[1] = new CStarPattern(leds, ledCount);
-    pPatterns[2] = new CStarPattern(leds, ledCount);
-    pPatterns[3] = new CStarPattern(leds, ledCount);
+//    pPatterns[2] = new CStarPattern(leds, ledCount);
+//    pPatterns[3] = new CStarPattern(leds, ledCount);
     runPattern(20, 400);
     delete pPatterns[0];
     delete pPatterns[1];
-    delete pPatterns[2];
-    delete pPatterns[3];
+//    delete pPatterns[2];
+//    delete pPatterns[3];
   }
+  */         
 
   pPatterns[0] = new CRainbowMarchPattern(leds, ledCount);
   runPattern(1000, 5000);
@@ -341,13 +352,9 @@ void loop()
   runPattern(100, 5000);
   delete pPatterns[0];
 
-
   pPatterns[0] = new CThreeColorMarchPattern(leds, ledCount, CRGB::White, CRGB::Red, CRGB::Green);
   runPattern(30, 3000);
   delete pPatterns[0];
-
-
-
 
   for (int i = 0;i<75;i++)
     twinkle();
