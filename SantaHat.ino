@@ -17,15 +17,20 @@ constexpr int factorial(int n)
 }
 */
 
-enum Flags { good=0, fail=1, bad=2, eof=4 };
-
 class CPattern 
 {  
   protected: 
     CRGB *m_pLeds; 
     int m_ledCount; 
   public: 
-    CPattern(CRGB *pLeds, int numLeds) : m_pLeds(pLeds), m_ledCount(numLeds) {};
+    CPattern(CRGB *pLeds, int numLeds) : m_pLeds(pLeds), m_ledCount(numLeds) 
+    {
+      //Serial.println("Create CPattern");
+    }
+    virtual ~CPattern() 
+    {
+      //Serial.println("Delete CPattern");
+    }
     virtual void draw() = 0; 
 }; 
 
@@ -138,8 +143,13 @@ class CStarPattern : public CPattern
   public: 
     CStarPattern(CRGB *pStartLed, int nLeds) : CPattern(pStartLed, nLeds), starPos(random(0,nLeds-1)) 
     {
-
+      //Serial.println("Create CStarPattern");
     } 
+
+    ~CStarPattern() 
+    {
+      //Serial.println("Delete CStarPattern");
+    }
 
     virtual void draw() 
     {
@@ -188,6 +198,9 @@ CPattern *pPatterns[10] = {NULL};
 void setup() {
 	// sanity check delay - allows reprogramming if accidently blowing power w/leds
  	delay(1000);
+  //Serial.begin(9600);
+    LEDS.setBrightness(8);
+
 
   // global brightness doesn't work on the attiny85
  	//LEDS.setBrightness(8);
@@ -317,47 +330,51 @@ void runPattern(int frameCount, int duration)
 
 void loop()
 {
-  /*
-  for (int i = 0;i<5;i++)
-  {
-    pPatterns[0] = new CSolidPattern(leds, ledCount, CRGB::Black);
-    pPatterns[1] = new CStarPattern(leds, ledCount);
-//    pPatterns[2] = new CStarPattern(leds, ledCount);
-//    pPatterns[3] = new CStarPattern(leds, ledCount);
-    runPattern(20, 400);
-    delete pPatterns[0];
-    delete pPatterns[1];
-//    delete pPatterns[2];
-//    delete pPatterns[3];
-  }
-  */         
+  const byte brightness = 32;
+  const CRGB red = CRGB(brightness,0,0);
+  const CRGB green = CRGB(0,brightness,0);
+  const CRGB blue = CRGB(0,0,brightness);
+  const CRGB white = CRGB(brightness,brightness,brightness);
 
   pPatterns[0] = new CRainbowMarchPattern(leds, ledCount);
   runPattern(1000, 5000);
   delete pPatterns[0];
 
-  pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Red);
+  pPatterns[0] = new CSolidDotPattern(leds, ledCount, red);
   runPattern(15, 1500);
   delete pPatterns[0];
 
-  pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::White);
+  pPatterns[0] = new CSolidDotPattern(leds, ledCount, white);
   runPattern(15, 1500);
   delete pPatterns[0];
 
-  pPatterns[0] = new CSolidDotPattern(leds, ledCount, CRGB::Green);
+  pPatterns[0] = new CSolidDotPattern(leds, ledCount, green);
   runPattern(15, 1500);
   delete pPatterns[0];
 
-  pPatterns[0] = new CColorBouncePattern(leds, ledCount);
-  runPattern(100, 5000);
-  delete pPatterns[0];
+  //pPatterns[0] = new CColorBouncePattern(leds, ledCount, CRGB::Red, CHSV(200, 255, 128));
+  //runPattern(100, 5000);
+  //delete pPatterns[0];
 
-  pPatterns[0] = new CThreeColorMarchPattern(leds, ledCount, CRGB::White, CRGB::Red, CRGB::Green);
+  pPatterns[0] = new CThreeColorMarchPattern(leds, ledCount, white, red, green);
   runPattern(30, 3000);
   delete pPatterns[0];
 
-  for (int i = 0;i<75;i++)
-    twinkle();
+  for (int i = 0;i<5;i++)
+  {
+    pPatterns[0] = new CSolidPattern(leds, ledCount, CHSV(200, 255, 32));
+    pPatterns[1] = new CStarPattern(leds, ledCount);
+    pPatterns[2] = new CStarPattern(leds, ledCount);
+    pPatterns[3] = new CStarPattern(leds, ledCount);
+    runPattern(20, 400);
+    delete pPatterns[0];
+    delete pPatterns[1];
+    delete pPatterns[2];
+    delete pPatterns[3];
+  }
+
+  //for (int i = 0;i<75;i++)
+  //  twinkle();
 
 }
 
